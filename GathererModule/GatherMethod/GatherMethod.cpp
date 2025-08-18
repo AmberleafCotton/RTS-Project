@@ -6,106 +6,98 @@
 #include "GathererModule/GathererModule.h"
 #include "RTS_Actor.h"
 #include "GatherableModule/GatherableModule.h"
+#include "SlotModule/SlotModule.h"
+#include "Utilis/Libraries/RTSModuleFunctionLibrary.h"
 
 void UGatherMethod::InitializeGatherMethod(UGathererModule* Gatherer)
 {
 	GathererModule = Gatherer;
+	SetResourceTypePriority(EResourceType::Wood);
+}
 
-	// Get Cached Path Comp from Pawn.
-	if (APawn* OwnerPawn = Cast<APawn>(GathererModule->Owner))
+void UGatherMethod::Gather(ARTS_Actor* TargetResource)
+{
+	if (!TargetResource)
 	{
-		
-		CachedAIController = Cast<AAIController>(OwnerPawn->GetController());
+		UE_LOG(LogTemp, Warning, TEXT("UGatherMethod::Gather() - TargetResource is null!"));
+		FindNewResource();
+		return;
+	}
 
-		if (CachedAIController)
+	// Ensure gatherable module is available for this target
+	if (!GatherableModule || CurrentGatheringTarget.Get() != TargetResource)
+	{
+		// Clear any active gathering timer when switching to a new resource
+		if (GathererModule && GathererModule->GetWorld())
 		{
-			CachedPathComp = CachedAIController->GetPathFollowingComponent();
+			GathererModule->GetWorld()->GetTimerManager().ClearTimer(GatheringTimer);
 		}
+		
+		GatherableModule = URTSModuleFunctionLibrary::GetGatherableModule(TargetResource);
+		CurrentGatheringTarget = TargetResource;
 	}
 
-	// Bind to on arrival at resource position.
-	if (!FOnMoveCompleted.IsValid())
+	if (!GatherableModule)
 	{
-		FOnMoveCompleted = CachedPathComp->OnRequestFinished.AddUObject(this, &UGatherMethod::OnMoveCompleted_Event);
+		UE_LOG(LogTemp, Warning, TEXT("UGatherMethod::Gather() - GatherableModule is null!"));
+		return;
 	}
+
+	SetResourceTypePriority(GatherableModule->ResourceType);
 }
 
-
-void UGatherMethod::Gather_Implementation(ARTS_Actor* TargetResource)
-{
-	GatherableModule = Cast<UGatherableModule>(TargetResource->Modules[FGameplayTag::RequestGameplayTag("Module.Gatherable")]);
-	
-	RequiredGatheringTime = GatherableModule->GatheringTime;
-	
-	FVector TargetLocation = TargetResource->GetActorLocation();
-	MoveToLocation(TargetLocation);
-}
-
-void UGatherMethod::StopGather_Implementation()
-{
-
-}
-
-void UGatherMethod::MoveToLocation(const FVector& TargetLocation)
-{
-	FAIMoveRequest MoveRequest;
-	MoveRequest.SetGoalLocation(TargetLocation);
-	MoveRequest.SetAcceptanceRadius(150.f);
-	MoveRequest.SetUsePathfinding(true);
-	MoveRequest.SetAllowPartialPath(false);
-
-	FNavPathSharedPtr NavPath;
-	CachedAIController->MoveTo(MoveRequest, &NavPath);
-
-	if (bDrawDebugPath)
-	{
-		if (NavPath.IsValid() && NavPath->GetPathPoints().Num() > 1)
-			for (int32 i = 0; i < NavPath->GetPathPoints().Num() - 1; ++i)
-				DrawDebugLine(GetWorld(),
-		NavPath->GetPathPoints()[i].Location,
-		 NavPath->GetPathPoints()[i + 1].Location,
-		  FColor::Green,false, 5.0f, 0, 4.0f);
-	}
-}
-
-void UGatherMethod::OnMoveCompleted_Event(FAIRequestID RequestID, const FPathFollowingResult& Result)
-{
-	if (Result.Code == EPathFollowingResult::Success)
-	{
-		StartGathering();
-	}
-}
 
 void UGatherMethod::StartGathering()
 {
-	
+	// Base implementation - empty
 }
 
 void UGatherMethod::TickGathering()
 {
-	
+	// Base implementation - empty
 }
 
 void UGatherMethod::CompleteGathering()
 {
-	if (!GathererModule || !GatherableModule) return;
-
-	GathererModule->GetWorld()->GetTimerManager().ClearTimer(GatheringTimer);
-
-	bool bHarvested = false;
-	int32 OutAmount = 0;
-	EResourceType OutType;
-
-	GatherableModule->HarvestResource(1, bHarvested, OutAmount, OutType);
-
-	if (bHarvested)
-	{
-		GathererModule->ResourceGathered(OutAmount, OutType);
-	}
-	else
-	{
-		// Find New Resource Placeholder
-	}
+	// Base implementation - empty
 }
 
+void UGatherMethod::StopGather()
+{
+	// Clear any active timers
+	if (GathererModule && GathererModule->GetWorld())
+	{
+		GathererModule->GetWorld()->GetTimerManager().ClearTimer(GatheringTimer);
+	}
+	
+	// Reset gathering state
+	CurrentGatheringTime = 0.f;
+	CurrentGatheringTarget = nullptr;
+	GatherableModule = nullptr;
+	CurrentGatheringTarget = nullptr;
+	
+	// Reset progress immediately when gathering completes
+	GathererModule->OnGatheringProgress.Broadcast(0.0f, 0.0f);
+}
 
+bool UGatherMethod::GetGatheringLocation(FVector& OutLocation)
+{	
+
+	return false;
+}
+
+void UGatherMethod::SetResourceTypePriority(EResourceType ResourceType)
+{
+	ResourceTypePriority = ResourceType;
+}
+
+void UGatherMethod::FindNewResource()
+{
+	// NOTE: THIS WILL REQUIRE DELAY OR SET TIMER BY EVENT TO NOT GET INTO INFINITY LOOP
+	//  (basically it's a retry every 0.1s or something like that)
+	// TODO: implementing finding new resource and t hen call to gather method
+	UE_LOG(LogTemp, Warning, TEXT("UGatherMethod::FindNewResource() - Finding new resource"));
+
+	//ARTS_Actor* FoundResourceTarget = nullptr;
+	//GathererModule->ExecuteGathererModule(FoundResourceTarget);
+}

@@ -6,10 +6,11 @@
 #include "GatherableModule/GatherableModule.h"
 #include "GathererModule/GathererModule.h"
 #include "Navigation/PathFollowingComponent.h"
+#include "SlotModule/SlotModule.h"
 #include "GatherMethod.generated.h"
 
 UCLASS(Abstract, Blueprintable, EditInlineNew)
-class FINALRTS_API UGatherMethod : public UObject
+class DRAKTHYSPROJECT_API UGatherMethod : public UObject
 {
 	GENERATED_BODY()
 
@@ -19,36 +20,32 @@ public:
 	UPROPERTY()
 	UGathererModule* GathererModule;
 	
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Gather Method")
-	void Gather(ARTS_Actor* ResourceTarget);
-	virtual void Gather_Implementation(ARTS_Actor* ResourceTarget);
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Gather Method")
-	void StopGather();
-	virtual void StopGather_Implementation();
+	virtual void Gather(ARTS_Actor* ResourceTarget);
+	virtual void StopGather();
 	
 	FTimerHandle GatheringTimer;
 	
 	UPROPERTY()
 	TObjectPtr<UGatherableModule> GatherableModule;
 	
+	UPROPERTY()
+	TWeakObjectPtr<ARTS_Actor> CurrentGatheringTarget;
+
+	virtual bool GetGatheringLocation(FVector& OutLocation);
+	
 	float CurrentGatheringTime = 0.f;
 	float RequiredGatheringTime = 0.f;
 
-	void virtual OnMoveCompleted_Event(FAIRequestID RequestID, const FPathFollowingResult& Result);
 	void virtual StartGathering();
 	void virtual TickGathering();
-	void CompleteGathering();
+	void virtual CompleteGathering();
 	
-	void MoveToLocation(const FVector& TargetLocation);
-	FDelegateHandle FOnMoveCompleted;
-
-	UPROPERTY()
-	TObjectPtr<AAIController> CachedAIController = nullptr;
-	
-	UPROPERTY()
-	TObjectPtr<UPathFollowingComponent> CachedPathComp = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gather Method")
 	bool bDrawDebugPath;
+
+	EResourceType ResourceTypePriority;
+
+	void virtual FindNewResource();
+	void virtual SetResourceTypePriority(EResourceType ResourceType);
+	// add FindNewResource
 };

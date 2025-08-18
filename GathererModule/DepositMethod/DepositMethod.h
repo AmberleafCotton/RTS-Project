@@ -5,10 +5,11 @@
 #include "RTS_Actor.h"
 #include "GathererModule/GathererModule.h"
 #include "Navigation/PathFollowingComponent.h"
+#include "TimerManager.h"
 #include "DepositMethod.generated.h"
 
 UCLASS(Abstract, Blueprintable, EditInlineNew)
-class FINALRTS_API UDepositMethod : public UObject
+class DRAKTHYSPROJECT_API UDepositMethod : public UObject
 {
 	GENERATED_BODY()
 
@@ -18,26 +19,14 @@ public:
 	UPROPERTY()
 	UGathererModule* GathererModule;
 	
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Deposit Method")
-	void Deposit(ARTS_Actor* Target);
-	virtual void Deposit_Implementation(ARTS_Actor* Target);
+	virtual void Deposit();
+	virtual void StopDeposit();
+	virtual void CompleteDepositing();
 	
-	void GetDepositBuilding();
-
-	void virtual CompleteDepositing();
-	
-	void virtual OnMoveCompleted_Event(FAIRequestID RequestID, const FPathFollowingResult& Result);
-
-	void MoveToLocation(const FVector& TargetLocation);
-	
-	FDelegateHandle FOnMoveCompleted;
-	
-	UPROPERTY()
-	TObjectPtr<AAIController> CachedAIController = nullptr;
-	
-	UPROPERTY()
-	TObjectPtr<UPathFollowingComponent> CachedPathComp = nullptr;
+	virtual FVector GetDepositLocation();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bDrawDebugPath;
+
+	FTimerHandle DepositTimer;
 };

@@ -5,7 +5,7 @@
 The GathererModule is a comprehensive resource gathering and depositing system for RTS units. It provides a modular, extensible architecture that separates gathering logic from depositing logic, allowing for flexible resource management behaviors.
 
 ## Architecture
-
+d
 ```
 GathererModule (Core Controller)
 ├── GatherMethod (Gathering Strategy)

@@ -4,11 +4,14 @@
 #include "NormalDeposit.generated.h"
 
 UCLASS()
-class FINALRTS_API UNormalDeposit : public UDepositMethod
+class DRAKTHYSPROJECT_API UNormalDeposit : public UDepositMethod
 {
 	GENERATED_BODY()
 
 public:
-	virtual void Deposit_Implementation(ARTS_Actor* Target) override;
+	virtual void Deposit() override;
 	virtual void CompleteDepositing() override;
+	virtual void StopDeposit() override;
+	
+	virtual FVector GetDepositLocation() override;
 };
